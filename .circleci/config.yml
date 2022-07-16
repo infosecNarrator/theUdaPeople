@@ -178,9 +178,7 @@ jobs:
             npm install
             npm run build
             npm run migrations
-            npm audit fix --audit-level=critical --force
-            npm audit fix
-            npm audit --audit-level=critical
+            npm audit fix 
       - run:
           name: Send migration results to kvdb
           command: |
