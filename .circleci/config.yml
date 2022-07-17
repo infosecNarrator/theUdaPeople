@@ -28,8 +28,7 @@ commands:
             status=$(curl --insecure https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( $status==1));
             then
-            cd backend
-            npm install          
+            cd backend      
             npm run migrations:revert
             fi
 jobs:
@@ -343,7 +342,6 @@ jobs:
       - run:
           name: Update cloudfront distribution
           command: |
-            npm install
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --tags project=udapeople \
