@@ -25,6 +25,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
+            npm install
             status=$(curl --insecure https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( $status==1));
             then
