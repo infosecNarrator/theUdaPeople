@@ -287,4 +287,4 @@ workflows:
       - deploy-frontend:
           requires: [run-migrations]
       - deploy-backend:
-          requires: [run-migtations]
+          requires: [run-migrations]
