@@ -25,11 +25,11 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |
-            npm install
             status=$(curl --insecure https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( $status==1));
             then
             cd backend
+            npm install          
             npm run migrations:revert
             fi
 jobs:
@@ -346,7 +346,7 @@ jobs:
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --tags project=udapeople \
-              --stack-name "InitialStack-${OldWorkflowID}" \
+              --stack-name "udapeople" \
               --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}"
             echo OldWorkflowID: "${OldWorkflowID}"
             echo Current Workflow Id: "${CIRCLE_WORKFLOW_ID:0:7}"
