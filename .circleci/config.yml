@@ -224,6 +224,43 @@ jobs:
       #- destroy-environment:
       #    workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
+  deploy-backend:
+    docker:
+      - image: python:3.7-alpine3.11
+        environment:
+          NODE_ENV: "local"
+          VERSION: "1"
+          ENVIRONMENT: "production"
+          TYPEORM_CONNECTION: $TYPEORM_CONNECTION
+          TYPEORM_HOST: $TYPEORM_HOST
+          TYPEORM_USERNAME: $TYPEORM_USERNAME
+          TYPEORM_PASSWORD: $TYPEORM_PASSWORD
+          TYPEORM_DATABASE: $TYPEORM_DATABASE
+          TYPEORM_PORT: $TYPEORM_PORT
+          TYPEORM_ENTITIES: $TYPEORM_ENTITIES
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["42:a7:37:6a:65:6b:45:f2:b8:0a:76:63:d5:6e:8a:60"]
+      - attach_workspace:
+          at: /root
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update ansible rsync 
+            apk add curl
+            pip3 install awscli
+      - run:
+          name: Deploy backend
+          command: |
+            ls /root
+            ls /root/project/backend/
+            cat ~/project/.circleci/ansible/inventory.txt
+            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/deploy-backend.yml
+      # Here's where you will add some code to rollback on failure
+      #- destroy-environment:
+       #   workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+
 
 workflows:
   default:
@@ -249,3 +286,5 @@ workflows:
           requires: [configure-infrastructure]
       - deploy-frontend:
           requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migtations]
