@@ -182,11 +182,12 @@ jobs:
           TYPEORM_DATABASE: $TYPEORM_DATABASE
           TYPEORM_PORT: $TYPEORM_PORT
           TYPEORM_ENTITIES: $TYPEORM_ENTITIES
-
     steps:
       - checkout
       - add_ssh_keys:
           fingerprints: ["42:a7:37:6a:65:6b:45:f2:b8:0a:76:63:d5:6e:8a:60"]
+      - attach_workspace:
+          at: /root
       - run:
           name: Install dependencies
           command: |
@@ -219,6 +220,7 @@ jobs:
             then 
               echo "has been done successfully"
               curl https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
+              curl https://kvdb.io/QborQRezDZpvYT4JrLqzEK/stackid_${CIRCLE_WORKFLOW_ID:0:7} -d '${CIRCLE_WORKFLOW_ID:0:7}'
             else
               echo "has failed"
               curl https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '0'
@@ -339,6 +341,7 @@ jobs:
             --no-paginate --output text)
             echo $OldWorkflowID >> ~/OldWorkflowID.txt
             cat ~/OldWorkflowID.txt
+            
       - run:
           name: Update cloudfront distribution
           command: |
@@ -347,9 +350,6 @@ jobs:
               --stack-name InitialStack \
               --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
-
-
-
       # Here's where you will add some code to rollback on failure
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -364,11 +364,9 @@ jobs:
       - run:
           name: delete old stacks
           command: |
-            # Fetch the Old workflow ID
-            export OldWorkflowID=$(aws cloudformation \
-            list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-            --no-paginate --output text)
-            echo $OldWorkflowID >> ~/OldWorkflowID.txt
+            # Fetch the Old workflow ID that had been exported earlier
+            status=$(curl --insecure https://kvdb.io/QborQRezDZpvYT4JrLqzEK/stackid_${CIRCLE_WORKFLOW_ID:0:7})
+            echo status > OldWorkflowID.txt
             cat ~/OldWorkflowID.txt
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
             # Fetch the stack names          
