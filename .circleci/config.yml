@@ -203,6 +203,8 @@ jobs:
       - image: sleavely/node-awscli:14.x
     steps:
       - checkout
+      - attach_workspace:
+          at: /root
       - run:
           name: Run migrations
           command: |
@@ -220,7 +222,7 @@ jobs:
             then 
               echo "has been done successfully"
               curl https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
-              curl https://kvdb.io/QborQRezDZpvYT4JrLqzEK/stackid_${CIRCLE_WORKFLOW_ID:0:7} -d ${CIRCLE_WORKFLOW_ID:0:7}
+              echo ${CIRCLE_WORKFLOW_ID:0:7} > /project/.circleci/ansible/oldflow.txt
             else
               echo "has failed"
               curl https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '0'
@@ -361,13 +363,14 @@ jobs:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - attach_workspace:
+          at: /root
       - run:
           name: delete old stacks
           command: |
             # Fetch the Old workflow ID that had been exported earlier
-            curl --insecure https://kvdb.io/QborQRezDZpvYT4JrLqzEK/stackid_${CIRCLE_WORKFLOW_ID:0:7} > OldWorkflowID.txt
-            echo "old id is:"
-            cat OldWorkflowID.txt
+            export OldWorkflowID=`cat /project/.circleci/ansible/oldflow.txt`
+            echo "old id is:" $OldWorkflowID
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
             # Fetch the stack names          
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
