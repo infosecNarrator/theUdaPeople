@@ -337,17 +337,18 @@ jobs:
           name: Install tar
           command: |
             yum install -y tar gzip
-      - attach_workspace:
-          at: /root
       - run:
           name: acquire old workflow id
           command: |
             export OldWorkflowID=$(aws cloudformation \
             list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
             --no-paginate --output text)
-            echo $OldWorkflowID >> ~/OldWorkflowID.txt
-            cat ~/OldWorkflowID.txt
-            
+            echo $OldWorkflowID >> ~/project/.circleci/ansible/oldflow.txt
+            cat ~/project/.circleci/ansible/oldflow.txt
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - project/.circleci/ansible/oldflow.txt
       - run:
           name: Update cloudfront distribution
           command: |
@@ -356,6 +357,7 @@ jobs:
               --stack-name InitialStack \
               --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
+              
       # Here's where you will add some code to rollback on failure
       - revert-migrations:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
@@ -377,8 +379,8 @@ jobs:
           name: delete old stacks
           command: |
             # Fetch the Old workflow ID that had been exported earlier
-            # export OldWorkflowID=`curl --insecure https://kvdb.io/QborQRezDZpvYT4JrLqzEK/stackid_${CIRCLE_WORKFLOW_ID:0:7}`
-            export OldWorkflowID=`cat ~/OldWorkflowID.txt`
+            cd .circleci/ansible
+            export OldWorkflowID=`cat oldflow.txt`
             echo "old id is:" $OldWorkflowID
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
             # Fetch the stack names          
