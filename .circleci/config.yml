@@ -380,7 +380,7 @@ jobs:
           command: |
             # Fetch the Old workflow ID that had been exported earlier
             cd .circleci/ansible
-            export OldWorkflowID=`cat oldflow.txt`
+            export OldWorkflowID=`cut -d '-' -f 2 oldflow.txt`
             echo "old id is:" $OldWorkflowID
             echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
             # Fetch the stack names          
