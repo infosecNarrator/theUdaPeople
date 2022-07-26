@@ -156,7 +156,7 @@ jobs:
           command: |
             aws ec2 describe-instances \
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
-            --filters "Name=tag:Name,Values=backed-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --output text >> ~/project/.circleci/ansible/inventory.txt
             cat ~/project/.circleci/ansible/inventory.txt
           
@@ -197,6 +197,8 @@ jobs:
           command: |
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   run-migrations:
     docker:
@@ -239,23 +241,35 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            API_URL=$(curl --insecure https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7})
-            echo $API_URL
-            echo "${API_URL}"
-            echo "NODE_ENV=production" >> frontend/.env
-            echo "API_URL=${API_URL}" >> frontend/.env
+            export BACKEND_IP=$(aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
             cat frontend/.env
+            # texport API_URL=$(curl --insecure https://kvdb.io/QborQRezDZpvYT4JrLqzEK/migration_${CIRCLE_WORKFLOW_ID:0:7})
+            
       - run:
           name: Deploy frontend objects
           working_directory: ./frontend
           command: |
             npm i
             npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             ls -l
             aws s3 cp ./dist "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
-      # Here's where you will add some code to rollback on failure
+      - persist_to_workspace:
+          root: /
+          paths:
+            - project/frontend/
+            # Here's where you will add some code to rollback on failure
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert_migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+          when: on_fail
 
   deploy-backend:
     docker:
@@ -280,9 +294,19 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible rsync 
-            apk add curl
+            apk add --update ansible curl rsync openssh nodejs npm git
+            ansible --version
+            git --version
             pip3 install awscli
+            aws --version
+            cd backend
+            npm install
+            npm run build
+            cd -
+            # Zip dir
+            tar -C backend -czvf artifact.tar.gz
+            ls
+            pwd
       - run:
           name: Deploy backend
           command: |
