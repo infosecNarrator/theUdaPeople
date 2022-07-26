@@ -288,21 +288,9 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apk add --update ansible curl rsync openssh nodejs npm git
-            ansible --version
-            git --version
+            apk add --update ansible rsync 
+            apk add curl
             pip3 install awscli
-            aws --version
-            cd backend
-            npm install
-            npm run build
-            npm audit fix
-            npm audit fix --force
-            cd -
-            # Zip dir
-            tar -C backend -czvf artifact.tar.gz
-            ls
-            pwd
       - run:
           name: Deploy backend
           command: |
