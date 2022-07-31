@@ -7,7 +7,7 @@
 - name: "Copy backend build folder to EC2"
   become: yes
   unarchive:
-    src: /root/project/artifcat.tar.gz
+    src: /root/project/artifact.tar.gz
     dest: /home/ubuntu/app
 
 - name: "list dirs"
