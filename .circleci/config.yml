@@ -274,6 +274,7 @@ jobs:
     docker:
       - image: python:3.7-alpine3.11
         environment:
+          ANSIBLE_HOST_KEY_CHECKING: False
           NODE_ENV: "local"
           VERSION: "1"
           ENVIRONMENT: "production"
@@ -286,7 +287,6 @@ jobs:
           TYPEORM_ENTITIES: $TYPEORM_ENTITIES
     steps:
       - checkout
-      - ANSIBLE_HOST_KEY_CHECKING: False
       - add_ssh_keys:
           fingerprints: ["42:a7:37:6a:65:6b:45:f2:b8:0a:76:63:d5:6e:8a:60"]
       - attach_workspace:
