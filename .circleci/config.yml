@@ -218,6 +218,7 @@ jobs:
           command: |
             echo "has been done successfully" > ./migration_status.txt
             pwd && ls -al
+            cat migration_status.txt
             if grep -q "has been done successfully" ./migration_status.txt 
             then 
               echo "has been done successfully"
