@@ -271,6 +271,7 @@ jobs:
           at: /root
       - run:
           name: Install dependencies
+          no_output_timeout: 25m
           command: |
             apk add --update ansible curl rsync openssh nodejs npm git
             ansible --version
