@@ -185,7 +185,7 @@ jobs:
           name: Configure server
           command: |
             cd .circleci/ansible
-            ansible-playbook -i inventory.txt --key-file ~/.ssh/id_rsa_42:a7:37:6a:65:6b:45:f2:b8:0a:76:63:d5:6e:8a:60 configure-server.yml
+            ansible-playbook -i inventory.txt configure-server.yml
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
 
@@ -291,7 +291,7 @@ jobs:
             cd .circleci/ansible
             echo "Contents  of the inventory.txt file is -------"
             cat inventory.txt
-            ansible-playbook -i inventory.txt deploy-backend.yml -vvv
+            ansible-playbook -i inventory.txt --key-file ~/.ssh/id_rsa_42:a7:37:6a:65:6b:45:f2:b8:0a:76:63:d5:6e:8a:60 deploy-backend.yml -vvv
       # Here's where you will add some code to rollback on failure
       - destroy-environment:
           workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
