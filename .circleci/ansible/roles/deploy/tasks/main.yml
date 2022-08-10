@@ -1,43 +1,47 @@
-- name: Create app dir
-  become: yes
-  file:
-    path: /home/ubuntu/app
-    state: directory
-
-- name: "Copy backend build folder to EC2"
-  become: yes
-  unarchive:
-    src: /root/project/artifact.tar.gz
-    dest: /home/ubuntu/app
-
-- name: "list dirs"
-  become: yes
-  command: "ls /home/ubuntu/app/"
-
-- name: "delete anything that might already be running"
+---
+- name: "update local apt repo."
   become: true
-  command: pm2 delete all
-  ignore_errors: true
+  apt:
+    update_cache: yes
 
-- name: "print env"
-  shell: |
-    env
+- name: "upgrade apt packages"
+  become: true
+  apt:
+    upgrade: yes
 
-- name: "Start backend with pm2"
-  become: yes
+- name: "remove stale dependencies"
+  become: true
+  apt:
+    autoremove: yes
+
+- name: "install dependencies [nodejs and npm]."
+  become: true
+  apt:
+    name: ["nodejs", "npm"]
+    state: latest
+    update_cache: yes
+
+- name: "install pm2"
+  become: true
+  npm:
+    name: pm2
+    global: yes
+    production: yes
+    state: present
+
+- name: "Copy artifact into Instance" 
+  become: true
+  copy:
+    src: ~/project/artifact.tar.gz
+    dest: /home/ubuntu/artifact.tar.gz
+
+
+- name: "Start app"
+  become: true
   shell: |
-    pm2 start ./main.js
-  args:
-    chdir: /home/ubuntu/app/dist
-    
-  environment:
-    ENVIRONMENT: production
-    TYPEORM_CONNECTION: postgres
-    TYPEORM_ENTITIES: "/home/ubuntu/app/dist/modules/domain/**/*.entity{.ts,.js}"
-    TYPEORM_MIGRATIONS_DIR: "/home/ubuntu/app/dist/migrations"
-    TYPEORM_MIGRATIONS: "/home/ubuntu/app/dist/migrations/*.js"
-    TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST') }}"
-    TYPEORM_PORT: "{{ lookup('env', 'TYPEORM_PORT') }}"
-    TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME') }}"
-    TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD') }}"
-    TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE') }}"
+    cd /home/ubuntu
+    tar xzvf artifact.tar.gz
+    npm install
+    npm run build
+    pm2 stop all
+    pm2 start npm -- start
